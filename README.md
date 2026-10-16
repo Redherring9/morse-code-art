@@ -47,6 +47,7 @@ without narrowing the artwork.
 | Rows | Portrait: preview / vector / settings | Square: preview / vector / settings |
 |---|---|---|
 | 20 | [PNG](examples/portrait-20.png) / [SVG](examples/portrait-20.svg) / [JSON](examples/portrait-20.json) | [PNG](examples/square-20.png) / [SVG](examples/square-20.svg) / [JSON](examples/square-20.json) |
+| 20 (double thickness) | [PNG](examples/portrait-20-thick.png) / [SVG](examples/portrait-20-thick.svg) / [JSON](examples/portrait-20-thick.json) | [PNG](examples/square-20-thick.png) / [SVG](examples/square-20-thick.svg) / [JSON](examples/square-20-thick.json) |
 | 40 | [PNG](examples/portrait-40.png) / [SVG](examples/portrait-40.svg) / [JSON](examples/portrait-40.json) | [PNG](examples/square-40.png) / [SVG](examples/square-40.svg) / [JSON](examples/square-40.json) |
 | 60 | [PNG](examples/portrait-60.png) / [SVG](examples/portrait-60.svg) / [JSON](examples/portrait-60.json) | [PNG](examples/square-60.png) / [SVG](examples/square-60.svg) / [JSON](examples/square-60.json) |
 | 80 | [PNG (original)](examples/default.png) / [SVG](examples/default.svg) / [JSON](examples/default.json) | [PNG](examples/square-80.png) / [SVG](examples/square-80.svg) / [JSON](examples/square-80.json) |
@@ -60,6 +61,18 @@ for lines in 20 40 60 80; do
   python morse_art.py --config examples/default.json --lines "$lines" \
     --width 8.5 --height 8.5 --output "output/square-$lines"
 done
+```
+
+The additional thick 20-row versions use a **1-point stroke**, double the
+original 0.5 points. The target Morse unit remains 1.25 points; its minimum is
+raised to 1 point to accommodate the thicker stroke. The original outputs are
+unchanged.
+
+```sh
+python morse_art.py --config examples/portrait-20.json --stroke-width 1 --min-unit 1 \
+  --output output/portrait-20-thick
+python morse_art.py --config examples/square-20.json --stroke-width 1 --min-unit 1 \
+  --output output/square-20-thick
 ```
 
 ## Design

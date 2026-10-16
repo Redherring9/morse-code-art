@@ -35,24 +35,31 @@ two bundled B1919+21 profiles. Its measured data are by Pilia et al., obtained
 through EPN under CC BY 4.0; processing and synthetic variation are described
 below and in the accompanying JSON.
 
-### Line-count comparison
+### Line-count and canvas comparison
 
-These versions keep the original message, seed, colors, peak height, and print
-size. Only the row count changes; automatic spacing spreads fewer rows across
-the same artwork area for a less busy composition.
+These versions keep the original message, seed, colors, peak height, and artwork
+width. Automatic spacing spreads fewer rows across the same artwork area for a
+less busy composition. Portrait exports are US Letter, 8.5 x 11 inches
+(2550 x 3300 pixels); square exports are 8.5 x 8.5 inches (2550 x 2550 pixels).
+All PNGs are 300 DPI. The square canvas reduces the top and bottom whitespace
+without narrowing the artwork.
 
-| Rows | Preview / 300-DPI PNG | Vector SVG | Settings and attribution |
-|---|---|---|---|
-| 30 | [PNG](examples/lines-30.png) | [SVG](examples/lines-30.svg) | [JSON](examples/lines-30.json) |
-| 50 | [PNG](examples/lines-50.png) | [SVG](examples/lines-50.svg) | [JSON](examples/lines-50.json) |
-| 80 (original) | [PNG](examples/default.png) | [SVG](examples/default.svg) | [JSON](examples/default.json) |
+| Rows | Portrait: preview / vector / settings | Square: preview / vector / settings |
+|---|---|---|
+| 20 | [PNG](examples/portrait-20.png) / [SVG](examples/portrait-20.svg) / [JSON](examples/portrait-20.json) | [PNG](examples/square-20.png) / [SVG](examples/square-20.svg) / [JSON](examples/square-20.json) |
+| 40 | [PNG](examples/portrait-40.png) / [SVG](examples/portrait-40.svg) / [JSON](examples/portrait-40.json) | [PNG](examples/square-40.png) / [SVG](examples/square-40.svg) / [JSON](examples/square-40.json) |
+| 60 | [PNG](examples/portrait-60.png) / [SVG](examples/portrait-60.svg) / [JSON](examples/portrait-60.json) | [PNG](examples/square-60.png) / [SVG](examples/square-60.svg) / [JSON](examples/square-60.json) |
+| 80 | [PNG (original)](examples/default.png) / [SVG](examples/default.svg) / [JSON](examples/default.json) | [PNG](examples/square-80.png) / [SVG](examples/square-80.svg) / [JSON](examples/square-80.json) |
 
-To regenerate a variant without replacing the tracked examples:
+To regenerate the collection without replacing the tracked examples:
 
 ```sh
-python morse_art.py --config examples/default.json --lines 30 --output output/lines-30
-python morse_art.py --config examples/default.json --lines 50 --output output/lines-50
-python morse_art.py --config examples/default.json --lines 80 --output output/lines-80
+for lines in 20 40 60 80; do
+  python morse_art.py --config examples/default.json --lines "$lines" \
+    --output "output/portrait-$lines"
+  python morse_art.py --config examples/default.json --lines "$lines" \
+    --width 8.5 --height 8.5 --output "output/square-$lines"
+done
 ```
 
 ## Design

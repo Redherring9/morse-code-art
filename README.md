@@ -22,7 +22,7 @@ or font dependency. Both have an opaque background.
 Rendering is offline: all three measured profiles are bundled in `data/`.
 Only dependency installation needs internet access.
 
-## Example
+## Examples
 
 ![Default Morse pulsar artwork](examples/default.png)
 
@@ -34,6 +34,26 @@ The example uses the default `I LOVE YOU` message, 80 rows, seed 1919, and the
 two bundled B1919+21 profiles. Its measured data are by Pilia et al., obtained
 through EPN under CC BY 4.0; processing and synthetic variation are described
 below and in the accompanying JSON.
+
+### Line-count comparison
+
+These versions keep the original message, seed, colors, peak height, and print
+size. Only the row count changes; automatic spacing spreads fewer rows across
+the same artwork area for a less busy composition.
+
+| Rows | Preview / 300-DPI PNG | Vector SVG | Settings and attribution |
+|---|---|---|---|
+| 30 | [PNG](examples/lines-30.png) | [SVG](examples/lines-30.svg) | [JSON](examples/lines-30.json) |
+| 50 | [PNG](examples/lines-50.png) | [SVG](examples/lines-50.svg) | [JSON](examples/lines-50.json) |
+| 80 (original) | [PNG](examples/default.png) | [SVG](examples/default.svg) | [JSON](examples/default.json) |
+
+To regenerate a variant without replacing the tracked examples:
+
+```sh
+python morse_art.py --config examples/default.json --lines 30 --output output/lines-30
+python morse_art.py --config examples/default.json --lines 50 --output output/lines-50
+python morse_art.py --config examples/default.json --lines 80 --output output/lines-80
+```
 
 ## Design
 

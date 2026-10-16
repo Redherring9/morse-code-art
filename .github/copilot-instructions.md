@@ -20,3 +20,13 @@ the output depicts an observed pulse sequence.
   succeeded.
 - Include directly related documentation and tests with implementation changes.
 - Preserve dataset-specific licenses and provenance separately from code.
+
+## Validation
+
+Use the project virtual environment. Install `requirements-dev.txt` for development.
+Run `ruff check .`, `ruff format --check .`, and
+`python -m unittest discover -s tests -v` before implementation checkpoints.
+When changing rendering, also generate and inspect an example; verify PNG
+dimensions/DPI and that SVG contains vector paths rather than raster images.
+Keep normal generated outputs in the ignored `output/` folder. The intentionally
+tracked default example is in `examples/`.

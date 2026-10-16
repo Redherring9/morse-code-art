@@ -1,0 +1,3 @@
+# Matplotlib emits trailing spaces in generated SVG path coordinates.
+examples/*.svg whitespace=-blank-at-eol linguist-generated=true
+examples/*.json linguist-generated=true

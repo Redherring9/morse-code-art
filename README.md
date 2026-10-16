@@ -24,7 +24,16 @@ Only dependency installation needs internet access.
 
 ## Example
 
-The finished default example will be saved in `examples/`.
+![Default Morse pulsar artwork](examples/default.png)
+
+[Vector SVG](examples/default.svg) |
+[300-DPI PNG](examples/default.png) |
+[Settings and attribution](examples/default.json)
+
+The example uses the default `I LOVE YOU` message, 80 rows, seed 1919, and the
+two bundled B1919+21 profiles. Its measured data are by Pilia et al., obtained
+through EPN under CC BY 4.0; processing and synthetic variation are described
+below and in the accompanying JSON.
 
 ## Design
 

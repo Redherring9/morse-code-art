@@ -173,6 +173,12 @@ Use `--overwrite` to replace existing output files. Without it, existing files
 are left untouched. Output names are **prefixes**: extensions are appended, not
 replaced. Normal output goes in the Git-ignored `output/` folder.
 
+Outputs are staged before publication. If a file replacement fails, the
+generator restores overwritten files and removes newly published files. If
+restoration also fails, it reports the location of retained recovery files.
+This is recovery from reported filesystem errors, not a crash-safe transaction;
+do not run concurrent renders with the same output prefix.
+
 `--config` accepts either a generated metadata file or a JSON object containing
 configuration fields. Field names use underscores (e.g. `peak_height`), whereas
 CLI flags use hyphens. CLI values override saved settings. Selecting sources on
@@ -225,7 +231,10 @@ embedded in both image formats; there is no visible text on the artwork.
 
 Identical settings, data, generator code and dependency versions produce
 identical SVG/PNG bytes. Exact output across different library versions is not
-guaranteed. For print, use actual size rather than a printer's "fit to page".
+guaranteed. Rendering uses Matplotlib's default settings with explicit project
+overrides, independently of local styles or `matplotlibrc` settings, and restores
+the caller's settings afterward. For print, use actual size rather than a
+printer's "fit to page".
 
 **Keep the data attribution and modification notice when sharing derived
 artwork.** Retain the JSON sidecar or accompany the image with the credit in

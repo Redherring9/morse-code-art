@@ -8,6 +8,7 @@ import hashlib
 import json
 import math
 import platform
+import shutil
 import tempfile
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
@@ -34,6 +35,14 @@ DATA_CITATION = (
     "https://doi.org/10.1051/0004-6361/201425196"
 )
 Array = NDArray[np.float64]
+
+
+def is_finite_number(value: int | float) -> bool:
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
 
 MORSE = dict(
     zip(
@@ -127,7 +136,7 @@ class Config:
             "coherence",
         ):
             value = getattr(self, name)
-            if type(value) not in (int, float) or not math.isfinite(value):
+            if type(value) not in (int, float) or not is_finite_number(value):
                 raise ValueError(f"{name} must be a finite number.")
         if not 1 <= self.width <= 40 or not 1 <= self.height <= 40:
             raise ValueError("Canvas width and height must be between 1 and 40 inches.")
@@ -149,7 +158,7 @@ class Config:
             raise ValueError("peak_height must be non-negative (points).")
         if self.line_spacing is not None and (
             type(self.line_spacing) not in (int, float)
-            or not math.isfinite(self.line_spacing)
+            or not is_finite_number(self.line_spacing)
             or self.line_spacing <= 0
         ):
             raise ValueError("line_spacing must be finite and positive (points).")
@@ -171,9 +180,10 @@ class Config:
             not isinstance(self.weights, (list, tuple))
             or len(self.weights) != len(self.sources)
             or any(
-                type(w) not in (int, float) or not math.isfinite(w) or w < 0 for w in self.weights
+                type(w) not in (int, float) or not is_finite_number(w) or w < 0
+                for w in self.weights
             )
-            or not math.isfinite(sum(self.weights))
+            or not is_finite_number(sum(self.weights))
             or sum(self.weights) <= 0
         ):
             raise ValueError("Supply one non-negative weight per source, with a positive total.")
@@ -540,12 +550,18 @@ def render(
     }
     embedded = json.dumps(metadata, sort_keys=True)
     output.parent.mkdir(parents=True, exist_ok=True)
-    with tempfile.TemporaryDirectory(prefix=".morse-art-", dir=output.parent) as directory:
+    directory = Path(tempfile.mkdtemp(prefix=".morse-art-", dir=output.parent))
+    keep_staging = False
+    try:
         staged = []
-        with matplotlib.rc_context({"svg.hashsalt": "morse-art-v1", "path.simplify": False}):
+        render_settings = {
+            key: value for key, value in matplotlib.rcParamsDefault.items() if key != "backend"
+        }
+        render_settings.update({"svg.hashsalt": "morse-art-v1", "path.simplify": False})
+        with matplotlib.rc_context(render_settings):
             figure = build_figure(config, waveforms, rows)
             for fmt, destination in zip(formats, destinations[:-1], strict=True):
-                path = Path(directory) / destination.name
+                path = directory / destination.name
                 file_metadata = {"Title": "Morse pulsar artwork", "Description": embedded}
                 if fmt == "svg":
                     file_metadata["Date"] = None
@@ -567,11 +583,48 @@ def render(
             }
             for path in staged
         }
-        manifest = Path(directory) / destinations[-1].name
+        manifest = directory / destinations[-1].name
         manifest.write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         staged.append(manifest)
-        for source, destination in zip(staged, destinations, strict=True):
-            source.replace(destination)
+        backup_dir = directory / "backups"
+        backup_dir.mkdir()
+        backups = {}
+        for destination in destinations:
+            if destination.exists():
+                if not destination.is_file():
+                    raise ValueError(f"Output path is not a regular file: {destination}")
+                if not overwrite:
+                    raise FileExistsError(
+                        f"Output already exists: {destination}. Use --overwrite to replace it."
+                    )
+                backup = backup_dir / destination.name
+                shutil.copy2(destination, backup, follow_symlinks=False)
+                backups[destination] = backup
+        published = []
+        try:
+            for source, destination in zip(staged, destinations, strict=True):
+                source.replace(destination)
+                published.append(destination)
+        except OSError as exc:
+            failures = []
+            for destination in reversed(published):
+                try:
+                    if destination in backups:
+                        backups[destination].replace(destination)
+                    else:
+                        destination.unlink()
+                except OSError as rollback_error:
+                    failures.append(f"{destination}: {rollback_error}")
+            if failures:
+                keep_staging = True
+                raise OSError(
+                    f"Output publication failed: {exc}; rollback incomplete: "
+                    f"{'; '.join(failures)}. Recovery files retained in {directory}."
+                ) from exc
+            raise
+    finally:
+        if not keep_staging:
+            shutil.rmtree(directory)
     return destinations
 
 

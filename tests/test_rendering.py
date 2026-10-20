@@ -9,6 +9,7 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import patch
 
+import matplotlib
 import numpy as np
 from PIL import Image
 
@@ -220,6 +221,104 @@ class ExportTests(unittest.TestCase):
             self.assertFalse(output.with_suffix(".png").exists())
             self.assertFalse(list(Path(directory).glob(".morse-art-*")))
 
+    def test_rendering_ignores_and_restores_user_matplotlib_settings(self):
+        settings = {
+            "savefig.bbox": "tight",
+            "savefig.pad_inches": 2,
+            "lines.antialiased": False,
+            "path.sketch": (1, 30, 1),
+            "svg.hashsalt": "user-setting",
+            "path.simplify": True,
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "default"
+            changed = Path(directory) / "user-settings"
+            render(self.config, output)
+            with matplotlib.rc_context(settings):
+                render(self.config, changed)
+                for name, value in settings.items():
+                    self.assertEqual(matplotlib.rcParams[name], value)
+            for suffix in ("svg", "png"):
+                self.assertEqual(
+                    output.with_suffix(f".{suffix}").read_bytes(),
+                    changed.with_suffix(f".{suffix}").read_bytes(),
+                )
+            with Image.open(changed.with_suffix(".png")) as image:
+                self.assertEqual(image.size, (288, 360))
+                self.assertAlmostEqual(image.info["dpi"][0], 72, places=1)
+
+    def test_publication_failure_restores_existing_outputs_and_removes_new_files(self):
+        original_replace = Path.replace
+        for existing in ((), ("svg",), ("svg", "png", "json")):
+            for failure_at in (1, 2, 3):
+                with (
+                    self.subTest(existing=existing, failure_at=failure_at),
+                    tempfile.TemporaryDirectory() as directory,
+                ):
+                    output = Path(directory) / "art"
+                    if existing:
+                        render(self.config, output)
+                        for suffix in ("svg", "png", "json"):
+                            if suffix not in existing:
+                                output.with_suffix(f".{suffix}").unlink()
+                    originals = {
+                        suffix: output.with_suffix(f".{suffix}").read_bytes() for suffix in existing
+                    }
+                    calls = 0
+
+                    def fail_publication(source, destination, fail_at=failure_at):
+                        nonlocal calls
+                        calls += 1
+                        if calls == fail_at:
+                            raise OSError("Replacement failed")
+                        return original_replace(source, destination)
+
+                    with patch("morse_art.Path.replace", new=fail_publication):
+                        with self.assertRaisesRegex(OSError, "Replacement failed"):
+                            render(replace(self.config, seed=42), output, overwrite=True)
+                    for suffix in ("svg", "png", "json"):
+                        path = output.with_suffix(f".{suffix}")
+                        if suffix in originals:
+                            self.assertEqual(path.read_bytes(), originals[suffix])
+                        else:
+                            self.assertFalse(path.exists())
+                    self.assertFalse(list(Path(directory).glob(".morse-art-*")))
+
+    def test_backup_failure_does_not_change_existing_outputs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "art"
+            paths = render(self.config, output)
+            originals = {path: path.read_bytes() for path in paths}
+            with patch("morse_art.shutil.copy2", side_effect=OSError("Backup failed")):
+                with self.assertRaisesRegex(OSError, "Backup failed"):
+                    render(replace(self.config, seed=42), output, overwrite=True)
+            for path, content in originals.items():
+                self.assertEqual(path.read_bytes(), content)
+            self.assertFalse(list(Path(directory).glob(".morse-art-*")))
+
+    def test_rollback_failure_retains_recovery_files_and_reports_location(self):
+        original_replace = Path.replace
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "art"
+            render(self.config, output)
+            original = output.with_suffix(".svg").read_bytes()
+            calls = 0
+
+            def fail_publication_and_rollback(source, destination):
+                nonlocal calls
+                calls += 1
+                if calls in (2, 3):
+                    raise OSError("Replacement failed")
+                return original_replace(source, destination)
+
+            with patch("morse_art.Path.replace", new=fail_publication_and_rollback):
+                with self.assertRaisesRegex(OSError, "rollback incomplete") as raised:
+                    render(replace(self.config, seed=42), output, overwrite=True)
+            recovery = list(Path(directory).glob(".morse-art-*"))
+            self.assertEqual(len(recovery), 1)
+            self.assertIn(str(recovery[0]), str(raised.exception))
+            self.assertEqual((recovery[0] / "backups" / "art.svg").read_bytes(), original)
+
     def test_cli_custom_source_uses_equal_weights(self):
         with tempfile.TemporaryDirectory() as directory, redirect_stdout(io.StringIO()):
             output = Path(directory) / "custom"
@@ -253,6 +352,26 @@ class ExportTests(unittest.TestCase):
             {"lines": True},
             {"weights": "wrong"},
             {"message": "HI!"},
+            *(
+                {name: sign * 10**400}
+                for name in (
+                    "width",
+                    "height",
+                    "margin",
+                    "peak_height",
+                    "stroke_width",
+                    "unit",
+                    "min_unit",
+                    "signal_width",
+                    "roughness",
+                    "drift",
+                    "coherence",
+                    "line_spacing",
+                )
+                for sign in (-1, 1)
+            ),
+            {"weights": [10**400, 1]},
+            {"weights": [10**308, 10**308]},
         )
         with tempfile.TemporaryDirectory() as directory:
             config = Path(directory) / "bad.json"

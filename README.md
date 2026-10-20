@@ -5,7 +5,17 @@ made entirely from a repeating, configurable Morse message.
 
 ## Quick start
 
-Requires Python 3.11 or newer. Run these commands from this folder:
+Requires Python 3.11 or newer. Run from a source checkout; there is no
+installable package or standalone application.
+
+Clone the repository:
+
+```sh
+git clone https://github.com/Redherring9/morse-code-art.git
+cd morse-code-art
+```
+
+On macOS or Linux:
 
 ```sh
 python3 -m venv .venv
@@ -13,6 +23,10 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python morse_art.py
 ```
+
+On Windows (PowerShell), activate the environment with
+`.\.venv\Scripts\Activate.ps1` instead of `source .venv/bin/activate`;
+use `python` instead of `python3` to create it.
 
 This writes `output/morse-art.svg`, `output/morse-art.png`, and
 `output/morse-art.json`. The default PNG is **2550 x 3300 pixels at 300 DPI**
@@ -217,7 +231,9 @@ guaranteed. For print, use actual size rather than a printer's "fit to page".
 artwork.** Retain the JSON sidecar or accompany the image with the credit in
 `data/SOURCES.md`; image-processing tools may strip embedded metadata.
 
-## Development and checkpoints
+## Development
+
+With the virtual environment activated:
 
 ```sh
 python -m pip install -r requirements-dev.txt
@@ -231,11 +247,13 @@ signals, real pixel-level depth occlusion, SVG/PNG exports, metadata replay,
 input validation and overwrite protection. GitHub Actions runs these checks on
 Python 3.11 and 3.14 for pushes and pull requests.
 
-Project instructions in
-[.github/copilot-instructions.md](.github/copilot-instructions.md) require
-working checkpoint commits, pushes, and remote-commit verification. This is an
-agent workflow policy, **not** a filesystem auto-sync service: uncommitted edits
-are not automatically uploaded.
+## License
 
-This repository is private. No software redistribution license has been selected;
-the bundled scientific data retain their separate CC BY 4.0 terms.
+The code is licensed under the [MIT License](LICENSE).
+
+The bundled scientific profiles are separately licensed under
+**Creative Commons Attribution 4.0 International**, not MIT. See
+[data/SOURCES.md](data/SOURCES.md) for their authors, sources, license, and
+modification notices. Artwork derived from these profiles, including the
+examples, must retain the required data attribution and modification notice;
+the code license does not replace those obligations.

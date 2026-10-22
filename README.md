@@ -2,6 +2,9 @@
 
 A Python command-line generator for pulsar-inspired stacked waveform artwork
 made entirely from a repeating, configurable Morse message.
+With a firm nod to Joy Division, and their 1979 debut album, Unknown Pleasure.
+Album artwork designer and artist, Peter Saville.
+
 
 ## Quick start
 
@@ -35,6 +38,13 @@ or font dependency. Both have an opaque background.
 
 Rendering is offline: all three measured profiles are bundled in `data/`.
 Only dependency installation needs internet access.
+
+
+## Notes
+Note: I have only tested this on Mac.  
+Note: AI heavily used in the creation of this little program.
+
+
 
 ## Examples
 
